@@ -2,26 +2,17 @@ from . import ureg, Q_
 from math import pi
 
 
-@ureg.check('[]', '[length]', '[length]', '[mass]*[length]**-3', None, None, None)
-def darcy_dp(f, L, D, rho, v=None, Q=None, m=None) -> Q_:
-    num_flow_specs = 0
-    if v is not None:
-        num_flow_specs += 1
-    if Q is not None:
-        v = Q / (pi / 4 * D**2)
-        num_flow_specs += 1
-    if m is not None:
-        v = (m / rho) / (pi / 4 * D**2)
-        num_flow_specs += 1
-
-    if num_flow_specs > 1:
-        raise Exception('Flow arguments are overspecified. Function requires exactly '
-                        'one of the following: 1) v (velocity), 2) Q (volumetric '
-                        'flow) or 3) m (mass flow)')
-    if num_flow_specs < 1:
-        raise Exception('Flow arguments are underspecified. Function requires exactly '
-                        'one of the following: 1) v (velocity), 2) Q (volumetric '
-                        'flow) or 3) m (mass flow)')
+@ureg.check(None, '[]', '[length]', '[length]', '[mass]/[volume]')
+def darcy_dp(flow: Q_, f: Q_, L: Q_, D: Q_, rho: Q_) -> Q_:
+    if flow.check('[length]/[time]'):
+        v = flow
+    elif flow.check('[volume]/[time]'):
+        v = flow / (pi * D ** 2 / 4)
+    elif flow.check('[mass]/[time]'):
+        v = flow / rho / (pi * D ** 2 / 4)
+    else:
+        raise ValueError('flow argument must be a mass flow, volumetric flow '
+                         'or velocity.')
 
     return f * rho * L * v * v / 2 / D
 
