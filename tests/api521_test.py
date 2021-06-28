@@ -1,4 +1,5 @@
-from psv_tools.api521 import Q_, fire_wetted_Q
+from psv_tools import Q_
+from psv_tools.api521 import fire_wetted_Q
 import pytest
 
 
@@ -15,4 +16,4 @@ class TestFireWettedQ:
 
     def test_fails_with_non_quantity_area(self):
         with pytest.raises(ValueError):
-            fire_wetted_Q(3500.0)
+            fire_wetted_Q(A=3500.0, adequate_drainage=True)
