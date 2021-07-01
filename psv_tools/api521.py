@@ -4,7 +4,7 @@ from scipy.optimize import root_scalar
 
 
 @ureg.wraps(None, (ureg.ft ** 2, None, ureg.dimensionless, None))
-def fire_wetted_Q(A: Q_, adequate_drainage: bool, F = 1.0,
+def fire_wetted_Q(A: Q_, adequate_drainage: bool, F: Q_ = Q_('1.0'),
                   air_cooler: bool = False) -> Q_:
     if adequate_drainage:
         C = 21000.0
@@ -45,6 +45,26 @@ def flash_to_VFs(flasher: th.flash.Flash, P: Q_, initial_VF: Q_, final_VF: Q_,
 
     return initial_state, final_state
 
-# @ureg.wraps(None, (None, ureg.ft ** 2, None, ureg.dimensionless))
-# def fire_wetted(flasher: th.flash.Flash, P_rel, VF, A, adequate_drainage: bool, F = 1.0):
-#
+
+def fire_wetted(flasher: th.flash.Flash, P: Q_, zs, initial_VF: Q_,
+                final_VF: Q_, A: Q_, adequate_drainage: bool, F: Q_ = Q_('1.0'),
+                air_cooler: bool = False):
+    assert P.check('[pressure]') and initial_VF.check('[]') and \
+           final_VF.check('[]') and A.check('[area]')
+
+    results = fire_wetted_Q(A=A, adequate_drainage=adequate_drainage, F=F,
+                            air_cooler=air_cooler)
+
+    initial_state, final_state = \
+        flash_to_VFs(flasher=flasher, P=P, initial_VF=initial_VF, final_VF=final_VF, zs=zs)
+
+    results['avg_Cp'] = Q_((initial_state.Cp() + final_state.Cp()) / 2.0, 'J/K/mol')
+    # TODO: Investigate integral of dCp/dT
+
+    results['interval_total_dH'] = Q_(final_state.H() - initial_state.H(), 'J/mol')
+    results['interval_specific_dH'] = results['avg_Cp'] * Q_(final_state.T - initial_state.T, 'K')
+    results['interval_latent_dH'] = results['interval_total_dH'] - results['interval_specific_dH']
+    results['latent_dH_per_vapor'] = results['interval_latent_dH'] / (final_state.VF - initial_state.VF)
+
+    results['n'] = results['Q'] / results['latent_dH_per_vapor']
+    return results
