@@ -12,9 +12,9 @@ class TestFireWettedQ:
          (Q_('500.0 ft^2'), False, Q_('1.0'), True, Q_('34500.0 BTU/hr/ft^2'), Q_('17250000.0 BTU/hr'))]
     )
     def test_works_with_quantity_inputs(self, A, adequate_drainage, F, C, air_cooler, Q):
-        results = fire_wetted_Q(A, adequate_drainage, F, air_cooler)
-        assert results['C'] == C
-        assert results['Q'].to('BTU/hr').magnitude == pytest.approx(Q.to('BTU/hr').magnitude)
+        Q, C = fire_wetted_Q(A, adequate_drainage, F, air_cooler)
+        assert C == C
+        assert Q.to('BTU/hr').magnitude == pytest.approx(Q.to('BTU/hr').magnitude)
 
     @pytest.mark.parametrize(
         'A, adequate_drainage, F, air_cooler',
