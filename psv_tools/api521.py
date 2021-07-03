@@ -5,7 +5,38 @@ from scipy.optimize import root_scalar
 
 @ureg.wraps(None, (ureg.ft ** 2, None, ureg.dimensionless, None))
 def fire_wetted_Q(A: Q_, adequate_drainage: bool, F: Q_ = Q_('1.0'),
-                  air_cooler: bool = False) -> Q_:
+                  air_cooler: bool = False) -> dict[str, Q_]:
+    """Calculates the heat absorbed by equipment containing liquid under fire
+    based on API 521.
+
+    The heat duty is normally calculated based on equations (7) and (8) from
+    API Standard 521, 7th Ed., §4.4.13.2.4.2:
+
+    .. math:: Q = C \times F \times A ^ 0.82
+
+    When the equipment in question is an air-cooled heat exchanger in
+    liquid-cooling service, the wetted area exponent is changed to 1.0 per
+    equations (21) and (22) in §4.4.13.2.8.4 of the same standard:
+
+    .. math:: Q = C \times F \times A
+
+    C is a constant dependent on whether the adequate drainage and
+    firefighting is present. Per §4.4.13.2.4.2, "The determination of what
+    constitutes adequate drainage is subjective and left to the user to decide
+    but it should be designed to carry flammable/combustible liquids away from
+    a vessel."
+
+    Environment factor F is used to account for fire-proof insulation or
+    earth-covered storage. See Table 5 in §4.4.13.2.4.2 for details.
+
+    :param A: Wetted surface area of the equipment item as a pint quantity
+    with [area] dimensionality
+    :param adequate_drainage: Whether or not the equipment
+    :param F:
+    :param air_cooler:
+    :return:
+    """
+
     if adequate_drainage:
         C = 21000.0
     else:

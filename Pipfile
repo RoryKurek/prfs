@@ -9,6 +9,7 @@ thermo = "*"
 
 [dev-packages]
 pytest = "*"
+sphinx = "*"
 
 [requires]
 python_version = "3.9"
