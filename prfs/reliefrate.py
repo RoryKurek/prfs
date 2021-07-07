@@ -1,25 +1,6 @@
-from . import ureg, Q_
+from . import Q_
 import thermo as th
-from scipy.optimize import root_scalar
-from functools import cache
-
-
-@ureg.wraps(None, (None, ureg.Pa, ureg.dimensionless, None))
-@cache
-def flash_to_VF(flasher: th.flash.Flash, P: Q_, VF: Q_, zs) \
-        -> th.equilibrium.EquilibriumState:
-
-    if VF == 0.0 or VF == 1.0:
-        return flasher.flash(P=P, VF=VF, zs=zs)
-    else:
-        sat_liquid = flash_to_VF(flasher, P=Q_(P, 'Pa'), VF=Q_('0.0'), zs=zs)
-        sat_vapor = flash_to_VF(flasher, P=Q_(P, 'Pa'), VF=Q_('1.0'), zs=zs)
-
-        def check_T(T_val):
-            return flasher.flash(T=T_val, P=P, zs=zs).VF - VF
-
-        T = root_scalar(check_T, bracket=[sat_liquid.T, sat_vapor.T]).root
-        return flasher.flash(T=T, P=P, zs=zs)
+from .util import flash_to_VF
 
 
 def api521_fire_wetted(flasher: th.flash.Flash,
