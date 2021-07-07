@@ -13,7 +13,7 @@ pytest = "*"
 sphinx = "*"
 sphinx-rtd-theme = "*"
 flake8 = "*"
-autopep8 = "*"
+yapf = "*"
 
 [requires]
 python_version = "3.9"

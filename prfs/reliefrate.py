@@ -22,7 +22,15 @@ def flash_to_VF(flasher: th.flash.Flash, P: Q_, VF: Q_, zs) \
         return flasher.flash(T=T, P=P, zs=zs)
 
 
-def api521_fire_wetted(flasher: th.flash.Flash, P: Q_, zs: list[float], initial_VF: Q_, final_VF: Q_, A: Q_, adequate_drainage: bool, F: Q_ = Q_('1.0'), air_cooler: bool = False) -> dict[str, Q_]:
+def api521_fire_wetted(flasher: th.flash.Flash,
+                       P: Q_,
+                       zs: list[float],
+                       initial_VF: Q_,
+                       final_VF: Q_,
+                       A: Q_,
+                       adequate_drainage: bool,
+                       F: Q_ = Q_('1.0'),
+                       air_cooler: bool = False) -> dict[str, Q_]:
     """
     Calculates the rate of vaporization for a vessel containing liquid
     under fire.
@@ -115,7 +123,7 @@ def api521_fire_wetted(flasher: th.flash.Flash, P: Q_, zs: list[float], initial_
         E = 0.82
 
     # Conversion is to avoid unit strangeness due to [area] ^ 0.82
-    Q = C * F * Q_((A ** E).magnitude, 'ft^2')
+    Q = C * F * Q_((A**E).magnitude, 'ft^2')
 
     initial_state = flash_to_VF(flasher=flasher, P=P, VF=initial_VF, zs=zs)
     final_state = flash_to_VF(flasher=flasher, P=P, VF=final_VF, zs=zs)
@@ -136,8 +144,13 @@ def api521_fire_wetted(flasher: th.flash.Flash, P: Q_, zs: list[float], initial_
 
     # Calculate vapor generation based on heat input
     n = Q / latent_dH_per_vapor
-    return dict(Q=Q, C=C, n=n, avg_Cp=avg_Cp, initial_T=initial_T,
-                final_T=final_T, interval_total_dH=interval_total_dH,
+    return dict(Q=Q,
+                C=C,
+                n=n,
+                avg_Cp=avg_Cp,
+                initial_T=initial_T,
+                final_T=final_T,
+                interval_total_dH=interval_total_dH,
                 interval_specific_dH=interval_specific_dH,
                 interval_latent_dH=interval_latent_dH,
                 latent_dH_per_vapor=latent_dH_per_vapor)
