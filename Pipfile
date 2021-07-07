@@ -12,6 +12,8 @@ scipy = "*"
 pytest = "*"
 sphinx = "*"
 sphinx-rtd-theme = "*"
+flake8 = "*"
+autopep8 = "*"
 
 [requires]
 python_version = "3.9"
