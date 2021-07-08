@@ -1,8 +1,9 @@
-from . import Q_
+from . import Q_, ureg
 import thermo as th
 from .util import flash_to_VF
 
 
+@ureg.check(None, '[pressure]', None, '[]', '[]', '[area]', None, '[]', None)
 def api521_fire_wetted(flasher: th.flash.Flash,
                        P: Q_,
                        zs: list[float],
@@ -89,9 +90,8 @@ def api521_fire_wetted(flasher: th.flash.Flash,
         `results['Q']`.
 
     """
-    assert P.check('[pressure]') and initial_VF.check('[]') and \
-        final_VF.check('[]') and A.check('[area]') and \
-        final_VF > initial_VF
+    if final_VF <= initial_VF:
+        raise ValueError('final_VF must be greater than initial_VF')
 
     if adequate_drainage:
         C = Q_('21000.0 BTU/hr/ft^2')
@@ -109,8 +109,7 @@ def api521_fire_wetted(flasher: th.flash.Flash,
     initial_state = flash_to_VF(flasher=flasher, P=P, VF=initial_VF, zs=zs)
     final_state = flash_to_VF(flasher=flasher, P=P, VF=final_VF, zs=zs)
 
-    # Currently uses average heat capacity based on the two endpoints
-    # TODO: Investigate integral of dCp/dT
+    # TODO: Investigate integral of Cp
     avg_Cp = Q_((initial_state.Cp() + final_state.Cp()) / 2.0, 'J/K/mol')
 
     initial_T, final_T = initial_state.T, final_state.T
