@@ -14,6 +14,7 @@ sphinx = "*"
 sphinx-rtd-theme = "*"
 flake8 = "*"
 yapf = "*"
+mypy = "*"
 
 [requires]
 python_version = "3.9"
