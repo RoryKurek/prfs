@@ -1,101 +1,8 @@
+from itertools import repeat
 import thermo as th
 from . import ureg
-import inspect
-
-
-METHOD_UNITS = {
-    'A': ('J/mol', ()),
-    'A_dep': ('J/mol', ()),
-    'A_formation_ideal_gas': ('J/mol', (None,)),
-    'A_ideal_gas': ('J/mol', (None,)),
-    'A_mass': ('J/kg', (None,)),
-    'A_reactive': ('J/mol', ()),
-    'Bvirial': ('m^3/mol', (None,)),
-    'Cp': ('J/mol/K', ()),
-    'Cp_dep': ('J/mol/K', (None,)),
-    'Cp_ideal_gas': ('J/mol/K', (None,)),
-    'Cp_mass': ('J/kg/K', (None,)),
-    'Cv': ('J/mol/K', ()),
-    'Cv_dep': ('J/mol/K', (None,)),
-    'Cv_ideal_gas': ('J/mol/K', (None,)),
-    'Cv_mass': ('J/kg/K', (None,)),
-    'G': ('J/mol', ()),
-    'G_dep': ('J/mol', ()),
-    'G_formation_ideal_gas': ('J/mol', (None,)),
-    'G_ideal_gas': ('J/mol', (None,)),
-    'G_mass': ('J/kg', (None,)),
-    'G_reactive': ('J/mol', ()),
-    'H': ('J/mol', ()),
-    'H_dep': ('J/mol', (None,)),
-    'H_formation_ideal_gas': ('J/mol', (None,)),
-    'H_ideal_gas': ('J/mol', (None,)),
-    'H_mass': ('J/kg', (None,)),
-    'H_reactive': ('J/mol', ()),
-    'Hc': ('J/mol', (None,)),
-    'Hc_lower': ('J/mol', (None,)),
-    'Hc_lower_mass': ('J/kg', (None,)),
-    'Hc_lower_normal': ('J/m^3', (None,)),
-    'Hc_lower_standard': ('J/m^3', (None,)),
-    'Hc_mass': ('J/kg', (None,)),
-    'Hc_normal': ('J/m^3', (None,)),
-    'Hc_standard': ('J/m^3', (None,)),
-    'Joule_Thomson': ('K/Pa', ()),
-    'MW': ('g/mol', (None,)),
-    'MWs': ('g/mol', (None,)),
-    'Pmc': ('Pa', (None,)),
-    'S': ('J/mol/K', ()),
-    'S_dep': ('J/mol/K', (None,)),
-    'S_formation_ideal_gas': ('J/mol/K', (None,)),
-    'S_ideal_gas': ('J/mol/K', (None,)),
-    'S_mass': ('J/kg/K', (None,)),
-    'S_reactive': ('J/mol/K', ()),
-    'Tmc': ('K', (None,)),
-    'U': ('J/mol', ()),
-    'U_dep': ('J/mol', ()),
-    'U_formation_ideal_gas': ('J/mol', (None,)),
-    'U_ideal_gas': ('J/mol', (None,)),
-    'U_mass': ('J/kg', (None,)),
-    'V': ('m^3/mol', ()),
-    'V_dep': ('m^3/mol', ()),
-    'V_gas': ('m^3/mol', (None,)),
-    'V_gas_normal': ('m^3/mol', (None,)),
-    'V_gas_standard': ('m^3/mol', (None,)),
-    'V_ideal_gas': ('m^3/mol', (None,)),
-    'V_iter': ('m^3/mol', (None, None)),
-    'V_liquid_ref': ('m^3/mol', (None,)),
-    'V_liquids_ref': ('m^3/mol', ()),
-    'V_mass': ('m^3/kg', (None,)),
-    'Vmc': ('m^3/mol', (None,)),
-    'Wobbe_index': ('J/mol', (None,)),
-    'Wobbe_index_lower': ('J/mol', (None,)),
-    'Wobbe_index_lower_mass': ('J/kg', (None,)),
-    'Wobbe_index_lower_normal': ('J/m^3', (None,)),
-    'Wobbe_index_lower_standard': ('J/m^3', (None,)),
-    'Wobbe_index_mass': ('J/kg', (None,)),
-    'Wobbe_index_normal': ('J/m^3', (None,)),
-    'Wobbe_index_standard': ('J/m^3', (None,)),
-    'alpha': ('m^2/s', (None,)),
-    'd2P_dT2': ('Pa/K^2', ()),
-    'd2P_dT2_frozen': ('Pa/K^2', ()),
-    'd2P_dTdV': ('mol*Pa^2/J/K', ()),
-    'd2P_dTdV_frozen': ('mol*Pa^2/J/K', ()),
-    'd2P_dV2': ('Pa*mol^2/m^6', ()),
-    'd2P_dV2_frozen': ('Pa*mol^2/m^6', ()),
-    'dA_dP': ('J/mol/Pa', ()),
-    'dA_dP_T': ('J/mol/Pa', ()),
-    'dA_dP_V': ('J/mol/Pa', ()),
-    'dA_dT': ('J/mol/K', ()),
-    'dA_dT_P': ('J/mol/K', ()),
-    'dA_dT_V': ('J/mol/K', ()),
-    'dA_dV_P': ('J/m^3', ()),
-    'dA_dV_T': ('J/m^3', ()),
-    'nu': ('m^2/s', (None,)),
-    'pseudo_Pc': ('Pa', (None,)),
-    'pseudo_Tc': ('K', (None,)),
-    'pseudo_Vc': ('m^3/mol', (None,)),
-    'rho_mass': ('kg/m^3', (None,)),
-    'rho_mass_liquid_ref': ('kg/m^3', (None,))
-}
+import inspect, re
+from pint import UndefinedUnitError
 
 
 PROPERTY_UNITS = {
@@ -144,6 +51,9 @@ PROPERTY_UNITS = {
     'conductivity_Ts': 'K',
 }
 
+find_return_units = re.compile(r'Returns.+\[([^-]*)\]', re.DOTALL)
+
+
 
 def create_property(name, units=None):
     @ureg.wraps(units, None)
@@ -168,9 +78,16 @@ class StateUnitsWrapper:
     def __init__(self, state: th.equilibrium.EquilibriumState):
         self._state = state
 
-        for name, member in inspect.getmembers(state):
-            if inspect.ismethod(member):
-                if name in METHOD_UNITS:
-                    setattr(self, name, ureg.wraps(*METHOD_UNITS[name])(member))
-                else:
+        for name, member in inspect.getmembers(state, inspect.ismethod):
+            if name[0] != '_' and hasattr(member, '__doc__') and member.__doc__ is not None:
+                match = find_return_units.search(member.__doc__)
+                if match is None:
                     setattr(self, name, member)
+                else:
+                    return_units = match.group(1)
+                    num_args = len(inspect.signature(member).parameters)
+                    args = tuple(repeat(None, num_args))
+                    try:
+                        setattr(self, name, ureg.wraps(return_units, args)(member))
+                    except UndefinedUnitError:
+                        pass
