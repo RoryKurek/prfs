@@ -1,5 +1,5 @@
-from psv_tools import Q_
-from psv_tools.api521 import fire_wetted_Q
+from prfs import Q_
+from prfs.requirement import fire_wetted_Q
 import pytest
 from pint import DimensionalityError
 
