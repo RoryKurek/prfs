@@ -1,84 +1,70 @@
-from typing import Optional
-from . import ureg, Q_
 from math import pi
 
 
-@ureg.check('[length]/[time]', '[mass]/[volume]', '[]', '[length]', '[length]', '[]', '[length]')
-def segment_dP_incompressible(v: Q_, rho_mass: Q_, f: Q_, D: Q_, L: Q_ = Q_('0.0 ft'), K: Q_ = Q_('0.0'), dz: Q_ = Q_('0.0 ft')) -> Q_:
+def segment_dP_incompressible(w: float, rho_mass: float, f: float, D: float, L: float = 0.0, K: float = 0.0,
+                              dz: float = 0.0) -> float:
     """
     Calculates the pressure drop across a pipe segment of constant
-    diameter for a given flow velocity. Assumes incompressible flow;
-    therefore, the velocity and density are assumed to be assumed to be
-    constant between inlet and outlet.
+    diameter for a given flow velocity. Assumes incompressible flow.
 
-    Flow is calculated using Bernoulli's equation, with head loss based
-    on the Weisbach formula.
+    Flow is calculated using Bernoulli's equation. As the flow is
+    incompressible, the velocity and density are assumed to be assumed
+    to be constant between inlet and outlet. The head loss component is
+    based on the Weisbach formula.
 
-    .. math:: \\Delta P = \\rho \\left[ \\left( f \\frac{L}{D} + K \\right)
-              \\frac{v^2}{2D} + \\Delta z \\right]
+    .. math:: \\Delta P = \\rho_m \\left[ \\left( f \\frac{L}{D} + K \\right)
+              \\frac{w^2}{2} + g \\Delta z \\right]
+
+    The gravitational acceleration :math:`g` is considered to be
+    constant at 9.80665 m/s².
 
     Parameters
     ----------
-    v
-        Fluid velocity (assumed constant between inlet and outlet
+    w
+        Fluid velocity (assumed constant between inlet and outlet)
+        [m/s]
     rho_mass
-        Fluid mass density (assumed constant between inlet and outlet
+        Fluid mass density (assumed constant between inlet and outlet)
+        [kg/m³]
     f
-        Fluid Darcy friction factor
+        Fluid Darcy friction factor [dimensionless]
     D
-        Piping diameter (assumed constant)
+        Piping diameter (assumed constant) [m]
     L
-        Length of piping
+        Length of piping [m]
     K
         Head loss coefficient for minor losses (i.e. fittings)
+        [dimensionless]
     dz
-        Elevation change between inlet and outlet
+        Elevation change between inlet and outlet [m]
 
     Returns
     -------
     dP
-        Pressure drop between the inlet and outlet
+        Pressure drop between the inlet and outlet [Pa]
     """
-    return rho_mass * ((f * L / D + K) * v * v / 2 + dz)
+    return rho_mass * ((f * L / D + K) * w * w / 2 + 9.80665 * dz)
 
 
-@ureg.check(None, '[length]', None)
-def calculate_velocity(flow: Q_, D: Q_, rho_mass: Optional[Q_] = None):
+def pipe_velocity_from_mass_flow(m_dot: float, D: float, rho_mass: float):
     """
-    Calculate the average velocity of flow through a pipe given a mass
-    flow or volumetric flow and the flow diameter. If the specified
-    flow is a mass flow rate, a mass density is also required.
+    Calculate the average velocity of flow through a pipe of constant
+    cross-section based on a mass flow rate.
 
-    If ``flow`` is a velocity, it is immediately returned.
-
-    .. math:: v &= \\frac{\\dot{V}}{\\pi D^2 / 4} \\\\
-                &= \\frac{\\dot{m} / \\rho}{\\pi D^2 / 4}
+    .. math:: w = \\frac{\\dot{m} / \\rho_m}{\\pi D^2 / 4}
 
     Parameters
     ----------
-    flow
-        Flow as a velocity, mass flow rate or volumetric flow rate
+    m_dot
+        Mass flow rate [kg/s]
     D
-        Flow diameter
+        Flow diameter [m]
     rho_mass
-        Fluid mass density
+        Fluid mass density [kg/m³]
 
     Returns
     -------
-    v
-        Average fluid velocity
+    w
+        Average fluid velocity [m/s]
     """
-    if flow.check('[length]/[time]'):
-        return flow
-    elif flow.check('[volume]/[time]'):
-        return flow / (pi * D ** 2 / 4)
-    elif flow.check('[mass]/[time]'):
-        if rho_mass is not None and rho_mass.check('[mass]/[volume]'):
-            return flow / rho_mass / (pi * D ** 2 / 4)
-        else:
-            raise ValueError('If `flow` is a mass flow rate, optional argument '
-                             '`rho_mass` must be passed and must be a mass density')
-    # TODO: Add handling for molar flows
-    else:
-        raise ValueError('flow argument must be a mass flow, volumetric flow '
-                         'or velocity.')
+    return m_dot / rho_mass / (pi * D ** 2 / 4)

@@ -2,6 +2,7 @@ import inspect
 import re
 from itertools import repeat
 
+import pint
 from pint import UndefinedUnitError
 from scipy.optimize import root_scalar
 from functools import cache
